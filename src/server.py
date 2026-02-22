@@ -1,4 +1,5 @@
 import asyncio
+import httpx
 import json
 import logging
 from typing import Optional, Literal, List
@@ -172,6 +173,20 @@ async def get_user_gifts(
             limit=limit, offset=offset
         )
         return json.dumps({"status": "success", "data": data}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+@mcp.tool()
+async def get_ton_price() -> str:
+    """
+    Get the current price of TON (The Open Network) in USD.
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get("https://tonapi.io/v2/rates?tokens=ton&currencies=usd")
+            response.raise_for_status()
+            data = response.json()
+            ton_data = data.get("rates", {}).get("TON", {})
+            return json.dumps({"status": "success", "data": ton_data}, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
 
