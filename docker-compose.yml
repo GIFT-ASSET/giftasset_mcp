@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  telegram-gifts-mcp:
+    build: .
+    container_name: telegram-gifts-mcp
+    restart: unless-stopped
+    # Use interactive/tty for stdio transport
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
