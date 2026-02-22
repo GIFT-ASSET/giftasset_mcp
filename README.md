@@ -23,6 +23,7 @@ The server exposes the following tools, allowing AI agents to dynamically fetch 
 | **`get_unique_last_sales`** | Retrieves the most recent unique sales for a specified collection. | `collection_name`, `limit`, `model_name` |
 | **`get_all_collections_last_sale`**| Gathers the absolute last sale data across all providers for all collections. | *None* |
 | **`get_gifts_update_stat`** | Provides daily statistical tracking of gift improvements and upgrades. | *None* |
+| **`get_ton_price`** | Fetches the current exchange rate of TON (The Open Network) in USD. | *None* |
 | **`get_user_gifts`** | Scans and returns the complete gift inventory of a specified Telegram user. | `username` or `telegram_id`, `limit`, `offset` |
 
 ---
