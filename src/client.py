@@ -152,3 +152,18 @@ class GiftAssetClient:
 
         data = await self._request("GET", "/api/user_gifts", params=params)
         return self._truncate_list(data, limit=20)
+
+    async def get_gifts_price_list(self, models: Optional[bool] = None, premarket: Optional[bool] = None) -> Any:
+        """GET /api/v1/gifts/get_gifts_price_list"""
+        params = {}
+        if models is not None: params["models"] = models
+        if premarket is not None: params["premarket"] = premarket
+        data = await self._request("GET", "/api/v1/gifts/get_gifts_price_list", params=params)
+        return self._truncate_list(data, limit=30)
+
+    async def get_gifts_price_list_history(self, collection_name: Optional[str] = None) -> Any:
+        """GET /api/v1/gifts/get_gifts_price_list_history"""
+        params = {}
+        if collection_name: params["collection_name"] = collection_name
+        data = await self._request("GET", "/api/v1/gifts/get_gifts_price_list_history", params=params)
+        return self._truncate_list(data, limit=20)

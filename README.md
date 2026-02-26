@@ -25,6 +25,8 @@ The server exposes the following tools, allowing AI agents to dynamically fetch 
 | **`get_gifts_update_stat`** | Provides daily statistical tracking of gift improvements and upgrades. | *None* |
 | **`get_ton_price`** | Fetches the current exchange rate of TON (The Open Network) in USD. | *None* |
 | **`get_user_gifts`** | Scans and returns the complete gift inventory of a specified Telegram user. | `username` or `telegram_id`, `limit`, `offset` |
+| **`get_gifts_price_list`** | Returns current floor prices for all collections across all marketplaces (GetGems, MRKT, Portals, Tonnel). | `models`, `premarket` |
+| **`get_gifts_price_list_history`** | Returns historical price data (24h hourly, 7d daily) for gift collections. | `collection_name` |
 
 ---
 

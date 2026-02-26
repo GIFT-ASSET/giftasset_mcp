@@ -190,6 +190,41 @@ async def get_ton_price() -> str:
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
 
+@mcp.tool()
+async def get_gifts_price_list(
+    models: Optional[bool] = None,
+    premarket: Optional[bool] = None
+) -> str:
+    """
+    Get current floor prices for all gift collections across all marketplaces.
+
+    Args:
+        models: If True, return model-level prices instead of collection-level
+        premarket: If True, filter to include only premarket collections
+    """
+    try:
+        data = await tg_client.get_gifts_price_list(models=models, premarket=premarket)
+        return json.dumps({"status": "success", "data": data}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def get_gifts_price_list_history(
+    collection_name: Optional[str] = None
+) -> str:
+    """
+    Get historical price data for gift collections with 24h and 7d timeframes.
+
+    Args:
+        collection_name: Name of a specific collection to retrieve history for (e.g., 'Loot Bag'). Omit for all collections.
+    """
+    try:
+        data = await tg_client.get_gifts_price_list_history(collection_name=collection_name)
+        return json.dumps({"status": "success", "data": data}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
 
 if __name__ == "__main__":
     # Run the server using stdio transport (default for MCP)
