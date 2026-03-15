@@ -267,6 +267,11 @@ async def get_user_profile_price(
         telegram_id: Telegram numeric ID
         limit: Number of top gifts to return
         offset: Pagination offset
+
+    IMPORTANT FOR LLM: The 'total_collection_price' and 'total_model_price' are calculated ONLY 
+    for the gifts returned in the current page (within the specified limit). To get the 
+    absolute total cost for a profile with many gifts, you MUST iterate through all 
+    pages using offsets and sum the values manually.
     """
     try:
         data = await tg_client.get_user_profile_price(

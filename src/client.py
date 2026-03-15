@@ -192,7 +192,14 @@ class GiftAssetClient:
         limit: int = 5,
         offset: int = 0
     ) -> Any:
-        """GET /api/v1/gifts/get_user_profile_price"""
+        """
+        GET /api/v1/gifts/get_user_profile_price
+        
+        NOTE FOR LLM: The totals (total_collection_price, total_model_price) in the response 
+        are SUMS of prices for the gifts in the current page ONLY. If the user has more 
+        than 'limit' gifts, you must fetch all pages using 'offset' to calculate 
+        the full profile value.
+        """
         if not username and not telegram_id:
             raise ValueError("Must provide either username or telegram_id")
             
