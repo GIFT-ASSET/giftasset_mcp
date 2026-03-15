@@ -149,32 +149,6 @@ async def get_gifts_update_stat() -> str:
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
 
-
-@mcp.tool()
-async def get_user_gifts(
-    username: Optional[str] = None,
-    telegram_id: Optional[int] = None,
-    limit: int = 50,
-    offset: int = 0
-) -> str:
-    """
-    Get a paginated list of NFT gifts owned by a specific Telegram user.
-    Must provide either username or telegram_id.
-    
-    Args:
-        username: Telegram username (without @)
-        telegram_id: Telegram numeric ID
-        limit: Number of gifts to return (1-50)
-        offset: Pagination offset
-    """
-    try:
-        data = await tg_client.get_user_gifts(
-            username=username, telegram_id=telegram_id, 
-            limit=limit, offset=offset
-        )
-        return json.dumps({"status": "success", "data": data}, indent=2)
-    except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
 @mcp.tool()
 async def get_ton_price() -> str:
     """
@@ -221,6 +195,110 @@ async def get_gifts_price_list_history(
     """
     try:
         data = await tg_client.get_gifts_price_list_history(collection_name=collection_name)
+        return json.dumps({"status": "success", "data": data}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def get_gift_by_name(name: str) -> str:
+    """
+    Get a specific gift by its exact name.
+    
+    Args:
+        name: Exact name of the gift (e.g., 'EasterEgg-1')
+    """
+    try:
+        data = await tg_client.get_gift_by_name(name=name)
+        return json.dumps({"status": "success", "data": data}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def get_all_collections_by_user(
+    username: Optional[str] = None,
+    telegram_id: Optional[int] = None,
+    include: Optional[List[str]] = None,
+    exclude: Optional[List[str]] = None,
+    limit: int = 100,
+    offset: int = 0
+) -> str:
+    """
+    Get all collections owned by a specific Telegram user with filtering options.
+    Must provide either username or telegram_id.
+    
+    Args:
+        username: Telegram username (without @)
+        telegram_id: Telegram numeric ID
+        include: List of collection names to include
+        exclude: List of collection names to exclude
+        limit: Pagination limit
+        offset: Pagination offset
+    """
+    try:
+        data = await tg_client.get_all_collections_by_user(
+            username=username, telegram_id=telegram_id,
+            include=include, exclude=exclude,
+            limit=limit, offset=offset
+        )
+        return json.dumps({"status": "success", "data": data}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def get_user_profile_price(
+    username: Optional[str] = None,
+    telegram_id: Optional[int] = None,
+    limit: int = 5,
+    offset: int = 0
+) -> str:
+    """
+    Get the total profile price and top gifts for a specific Telegram user.
+    Returns total profile value across different markets (getgems, portals, tonnel) 
+    calculated both by collection floor price (total_collection_price) and 
+    model floor price (total_model_price), along with the list of their top gifts 
+    with detailed market data.
+    Must provide either username or telegram_id.
+    
+    Args:
+        username: Telegram username (without @)
+        telegram_id: Telegram numeric ID
+        limit: Number of top gifts to return
+        offset: Pagination offset
+    """
+    try:
+        data = await tg_client.get_user_profile_price(
+            username=username, telegram_id=telegram_id,
+            limit=limit, offset=offset
+        )
+        return json.dumps({"status": "success", "data": data}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def get_gift_by_user(
+    username: Optional[str] = None,
+    limit: int = 10,
+    offset: int = 0
+) -> str:
+    """
+    Get a detailed list of gifts owned by a specific Telegram user, including market prices,
+    rarity attributes, and provider statistics.
+    Must provide either username or telegram_id.
+    
+    Args:
+        username: Telegram username (without @)
+        limit: Number of gifts to return
+        offset: Pagination offset
+    """
+    try:
+        data = await tg_client.get_gift_by_user(
+            username=username,
+            limit=limit, offset=offset
+        )
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)

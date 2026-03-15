@@ -137,22 +137,6 @@ class GiftAssetClient:
         data = await self._request("GET", "/api/v1/gifts/get_gifts_update_stat")
         return self._truncate_list(data, limit=20)
 
-    async def get_user_gifts(self, 
-                           username: Optional[str] = None,
-                           telegram_id: Optional[int] = None,
-                           limit: int = 50,
-                           offset: int = 0) -> Any:
-        """GET /api/user_gifts"""
-        if not username and not telegram_id:
-            raise ValueError("Must provide either username or telegram_id")
-            
-        params = {"limit": limit, "offset": offset}
-        if username: params["username"] = username
-        if telegram_id: params["telegram_id"] = telegram_id
-
-        data = await self._request("GET", "/api/user_gifts", params=params)
-        return self._truncate_list(data, limit=20)
-
     async def get_gifts_price_list(self, models: Optional[bool] = None, premarket: Optional[bool] = None) -> Any:
         """GET /api/v1/gifts/get_gifts_price_list"""
         params = {}
@@ -166,4 +150,71 @@ class GiftAssetClient:
         params = {}
         if collection_name: params["collection_name"] = collection_name
         data = await self._request("GET", "/api/v1/gifts/get_gifts_price_list_history", params=params)
+        return self._truncate_list(data, limit=20)
+
+    async def get_gift_by_name(self, name: str) -> Any:
+        """GET /api/v1/gifts/get_gift_by_name"""
+        params = {"name": name}
+        data = await self._request("GET", "/api/v1/gifts/get_gift_by_name", params=params)
+        return self._truncate_list(data, limit=20)
+
+    async def get_all_collections_by_user(
+        self,
+        username: Optional[str] = None,
+        telegram_id: Optional[int] = None,
+        include: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+        limit: int = 100,
+        offset: int = 0
+    ) -> Any:
+        """POST /api/v1/gifts/get_all_collections_by_user"""
+        if not username and not telegram_id:
+            raise ValueError("Must provide either username or telegram_id")
+            
+        params = {}
+        if username: params["username"] = username
+        if telegram_id: params["telegram_id"] = telegram_id
+            
+        payload = {
+            "limit": limit,
+            "offset": offset
+        }
+        if include is not None: payload["include"] = include
+        if exclude is not None: payload["exclude"] = exclude
+            
+        data = await self._request("POST", "/api/v1/gifts/get_all_collections_by_user", params=params, json_data=payload)
+        return self._truncate_list(data, limit=50)
+
+    async def get_user_profile_price(
+        self,
+        username: Optional[str] = None,
+        telegram_id: Optional[int] = None,
+        limit: int = 5,
+        offset: int = 0
+    ) -> Any:
+        """GET /api/v1/gifts/get_user_profile_price"""
+        if not username and not telegram_id:
+            raise ValueError("Must provide either username or telegram_id")
+            
+        params = {"limit": limit, "offset": offset}
+        if username: params["username"] = username
+        if telegram_id: params["telegram_id"] = telegram_id
+
+        data = await self._request("GET", "/api/v1/gifts/get_user_profile_price", params=params)
+        return self._truncate_list(data, limit=20)
+
+    async def get_gift_by_user(
+        self,
+        username: Optional[str] = None,
+        limit: int = 10,
+        offset: int = 0
+    ) -> Any:
+        """GET /api/v1/gifts/get_gift_by_user"""
+        if not username:
+            raise ValueError("Must provide username")
+            
+        params = {"limit": limit, "offset": offset}
+        if username: params["username"] = username
+
+        data = await self._request("GET", "/api/v1/gifts/get_gift_by_user", params=params)
         return self._truncate_list(data, limit=20)
