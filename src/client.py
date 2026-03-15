@@ -44,7 +44,7 @@ class GiftAssetClient:
             logger.error(f"An unexpected error occurred: {e}")
             raise Exception(f"Unexpected Error: {str(e)}")
 
-    def _truncate_list(self, data: Any, limit: int = 15) -> Any:
+    def _truncate_list(self, data: Any, limit: int = 100) -> Any:
         """Truncate large lists to prevent context window overflow."""
         if isinstance(data, list):
             if len(data) > limit:
@@ -67,7 +67,7 @@ class GiftAssetClient:
         """POST /api/gifts"""
         payload = {"slug": slug}
         data = await self._request("POST", "/api/gifts", json_data=payload)
-        return self._truncate_list(data, limit=20)
+        return self._truncate_list(data)
 
     async def get_market_actions(self, 
                                page: int = 0, 
@@ -135,7 +135,7 @@ class GiftAssetClient:
     async def get_gifts_update_stat(self) -> Any:
         """GET /api/v1/gifts/get_gifts_update_stat"""
         data = await self._request("GET", "/api/v1/gifts/get_gifts_update_stat")
-        return self._truncate_list(data, limit=20)
+        return self._truncate_list(data)
 
     async def get_gifts_price_list(self, models: Optional[bool] = None, premarket: Optional[bool] = None) -> Any:
         """GET /api/v1/gifts/get_gifts_price_list"""
@@ -156,7 +156,7 @@ class GiftAssetClient:
         """GET /api/v1/gifts/get_gift_by_name"""
         params = {"name": name}
         data = await self._request("GET", "/api/v1/gifts/get_gift_by_name", params=params)
-        return self._truncate_list(data, limit=20)
+        return self._truncate_list(data)
 
     async def get_all_collections_by_user(
         self,
@@ -183,7 +183,7 @@ class GiftAssetClient:
         if exclude is not None: payload["exclude"] = exclude
             
         data = await self._request("POST", "/api/v1/gifts/get_all_collections_by_user", params=params, json_data=payload)
-        return self._truncate_list(data, limit=50)
+        return self._truncate_list(data)
 
     async def get_user_profile_price(
         self,
@@ -201,7 +201,7 @@ class GiftAssetClient:
         if telegram_id: params["telegram_id"] = telegram_id
 
         data = await self._request("GET", "/api/v1/gifts/get_user_profile_price", params=params)
-        return self._truncate_list(data, limit=20)
+        return self._truncate_list(data)
 
     async def get_gift_by_user(
         self,
@@ -217,4 +217,4 @@ class GiftAssetClient:
         if username: params["username"] = username
 
         data = await self._request("GET", "/api/v1/gifts/get_gift_by_user", params=params)
-        return self._truncate_list(data, limit=20)
+        return self._truncate_list(data)
