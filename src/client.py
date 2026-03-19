@@ -5,7 +5,7 @@ from typing import Dict, Any, List, Optional
 
 logger = logging.getLogger(__name__)
 
-BASE_URL = "https://api.giftasset.dev/"
+BASE_URL = os.environ.get("GIFTASSET_API_URL", "https://api.giftasset.dev/")
 
 class GiftAssetClient:
     def __init__(self):
