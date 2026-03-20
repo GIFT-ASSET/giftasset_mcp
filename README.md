@@ -30,6 +30,12 @@ The server exposes the following tools, allowing AI agents to dynamically fetch 
 | **`get_gift_by_user`** | Scans and returns the detailed gift inventory of a specified Telegram user. | `username`, `limit`, `offset` |
 | **`get_all_collections_by_user`** | Lists all collections owned by a user with filtering options. | `username`, `telegram_id`, `include`, `exclude` |
 | **`get_user_profile_price`** | Calculates total profile valuation and lists top gifts with market data. | `username`, `telegram_id`, `limit`, `offset` |
+| **`get_unique_gifts_price_list`**| Returns detailed information on collection gift prices. | `collection_name` |
+| **`get_gifts_collections_emission`**| Tracks unique gifts issue inside collections. | *None* |
+| **`get_gifts_collections_marketcap`**| Calculates the overall market-cap of gifts. | *None* |
+| **`get_gifts_collections_health_index`**| Evaluates collection health (liquidity, mcap, whales). | *None* |
+| **`get_gifts_collections_greed_index`**| Tracks greed index metrics (hidden, upgraded, owners). | *None* |
+| **`get_providers_volumes`**| Provides aggregated sales volumes from all providers. | *None* |
 
 ---
 

@@ -64,6 +64,7 @@ async def get_market_actions(
 
 @mcp.tool()
 async def get_gifts_aggregator(
+    receiver: int,
     page: int = 0,
     name: str = "All",
     model: str = "All",
@@ -73,8 +74,7 @@ async def get_gifts_aggregator(
     from_price: Optional[int] = None,
     to_price: Optional[int] = None,
     markets: Optional[List[str]] = None,
-    blockchain_view: Optional[bool] = None,
-    receiver: Optional[int] = None
+    blockchain_view: Optional[bool] = None
 ) -> str:
     """
     Get filtered NFT gift aggregator data. Returns unified NFTs lists from various markets.
@@ -166,15 +166,15 @@ async def get_ton_price() -> str:
 
 @mcp.tool()
 async def get_gifts_price_list(
-    models: Optional[bool] = None,
-    premarket: Optional[bool] = None
+    models: bool = False,
+    premarket: bool = False
 ) -> str:
     """
     Get current floor prices for all gift collections across all marketplaces.
 
     Args:
-        models: If True, return model-level prices instead of collection-level
-        premarket: If True, filter to include only premarket collections
+        models: If True, return model-level prices instead of collection-level (default: False)
+        premarket: If True, filter to include only premarket collections (default: False)
     """
     try:
         data = await tg_client.get_gifts_price_list(models=models, premarket=premarket)
@@ -304,6 +304,83 @@ async def get_gift_by_user(
             username=username,
             limit=limit, offset=offset
         )
+        return json.dumps({"status": "success", "data": data}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def get_unique_gifts_price_list(
+    collection_name: str
+) -> str:
+    """
+    Get information on collection gift prices.
+    
+    Args:
+        collection_name: Name of the collection (e.g., 'Loot Bag')
+    """
+    try:
+        data = await tg_client.get_unique_gifts_price_list(collection_name=collection_name)
+        return json.dumps({"status": "success", "data": data}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def get_gifts_collections_emission() -> str:
+    """
+    Get information about unique gifts issue inside collections.
+    """
+    try:
+        data = await tg_client.get_gifts_collections_emission()
+        return json.dumps({"status": "success", "data": data}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def get_gifts_collections_marketcap() -> str:
+    """
+    Get the market-cap of gifts.
+    """
+    try:
+        data = await tg_client.get_gifts_collections_marketcap()
+        return json.dumps({"status": "success", "data": data}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def get_gifts_collections_health_index() -> str:
+    """
+    Get collection health index (liquidity, mcap, whales).
+    """
+    try:
+        data = await tg_client.get_gifts_collections_health_index()
+        return json.dumps({"status": "success", "data": data}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def get_gifts_collections_greed_index() -> str:
+    """
+    Get greed index (hidden, upgraded, owners).
+    """
+    try:
+        data = await tg_client.get_gifts_collections_greed_index()
+        return json.dumps({"status": "success", "data": data}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+
+
+@mcp.tool()
+async def get_providers_volumes() -> str:
+    """
+    Get providers' sales volumes.
+    """
+    try:
+        data = await tg_client.get_providers_volumes()
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)

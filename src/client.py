@@ -14,7 +14,12 @@ class GiftAssetClient:
         if not self.api_key:
             logger.warning("GIFTASSET_API_KEY environment variable is not set. API calls might fail with 403 Forbidden. Get your key from @giftassetmcp_bot")
             
-        headers = {"x-api-token": self.api_key} if self.api_key else {}
+        headers = {
+            "x-api-token": self.api_key,
+            "Accept-Encoding": "gzip, deflate"
+        } if self.api_key else {
+            "Accept-Encoding": "gzip, deflate"
+        }
         self.client = httpx.AsyncClient(base_url=BASE_URL, headers=headers, timeout=30.0)
 
     async def _request(self, method: str, endpoint: str, params: Optional[Dict] = None, json_data: Optional[Dict] = None) -> Any:
@@ -90,6 +95,7 @@ class GiftAssetClient:
 
     async def get_gifts_aggregator(self,
                                  page: int,
+                                 receiver: int,
                                  name: str = "All",
                                  model: str = "All",
                                  symbol: str = "All",
@@ -97,14 +103,14 @@ class GiftAssetClient:
                                  number: Optional[int] = None,
                                  from_price: Optional[int] = None,
                                  to_price: Optional[int] = None,
-                                 markets: List[str] = None,
-                                 blockchain_view: Optional[bool] = None,
-                                 receiver: Optional[int] = None) -> Any:
+                                 markets: Optional[List[str]] = None,
+                                 blockchain_view: Optional[bool] = None) -> Any:
         """POST /api/aggregator"""
         params = {"page": page}
         
         # Build payload based on the working example
         payload = {
+            "page": page,  # Some endpoints might expect page in payload too
             "name": name,
             "model": model,
             "symbol": symbol,
@@ -138,10 +144,12 @@ class GiftAssetClient:
         return self._truncate_list(data)
 
     async def get_gifts_price_list(self, models: Optional[bool] = None, premarket: Optional[bool] = None) -> Any:
-        """GET /api/v1/gifts/get_gifts_price_list"""
-        params = {}
-        if models is not None: params["models"] = models
-        if premarket is not None: params["premarket"] = premarket
+        # API requires models and premarket to be present as strings "true"/"false"
+        params = {
+            "models": str(models if models is not None else False).lower(),
+            "premarket": str(premarket if premarket is not None else False).lower()
+        }
+        
         data = await self._request("GET", "/api/v1/gifts/get_gifts_price_list", params=params)
         return self._truncate_list(data, limit=30)
 
@@ -224,4 +232,35 @@ class GiftAssetClient:
         if username: params["username"] = username
 
         data = await self._request("GET", "/api/v1/gifts/get_gift_by_user", params=params)
+        return self._truncate_list(data)
+
+    async def get_unique_gifts_price_list(self, collection_name: str) -> Any:
+        """GET /api/v1/gifts/get_unique_gifts_price_list"""
+        params = {"collection_name": collection_name}
+        data = await self._request("GET", "/api/v1/gifts/get_unique_gifts_price_list", params=params)
+        return self._truncate_list(data)
+
+    async def get_gifts_collections_emission(self) -> Any:
+        """GET /api/v1/gifts/get_gifts_collections_emission"""
+        data = await self._request("GET", "/api/v1/gifts/get_gifts_collections_emission")
+        return self._truncate_list(data, limit=50)
+
+    async def get_gifts_collections_marketcap(self) -> Any:
+        # GET /api/v1/gifts/get_gifts_collections_marketcap
+        data = await self._request("GET", "/api/v1/gifts/get_gifts_collections_marketcap")
+        return self._truncate_list(data, limit=50)
+
+    async def get_gifts_collections_health_index(self) -> Any:
+        # GET /api/v1/gifts/get_gifts_collections_health_index
+        data = await self._request("GET", "/api/v1/gifts/get_gifts_collections_health_index")
+        return self._truncate_list(data, limit=50)
+
+    async def get_gifts_collections_greed_index(self) -> Any:
+        # GET /api/v1/gifts/get_gifts_collections_greed_index
+        data = await self._request("GET", "/api/v1/gifts/get_gifts_collections_greed_index")
+        return self._truncate_list(data, limit=50)
+
+    async def get_providers_volumes(self) -> Any:
+        # GET /api/v1/gifts/get_providers_volumes
+        data = await self._request("GET", "/api/v1/gifts/get_providers_volumes")
         return self._truncate_list(data)
