@@ -134,6 +134,10 @@ Besides the default `stdio` transport, the server can be run as a long-lived HTT
 | `MCP_PORT` | `8000` | Bind port for HTTP/SSE transports. |
 | `GIFTASSET_API_URL` | `https://api.giftasset.dev/` | Upstream API base URL. |
 | `GIFTASSET_API_KEY` | *(empty)* | Fallback API key used when the request has no auth header. |
+| `MCP_ALLOWED_HOSTS` | *(empty)* | Comma-separated list of allowed `Host` header values for DNS-rebinding protection. Required when serving behind a public domain (e.g. `my.domain.com,my.domain.com:*`). |
+| `MCP_ALLOWED_ORIGINS` | *(empty)* | Comma-separated list of allowed `Origin` header values. |
+| `MCP_DNS_REBINDING_PROTECTION` | `on` | Set to `off` to fully disable Host/Origin validation (safe when a trusted reverse proxy sits in front). |
+| `MCP_CLIENT_CACHE_MAX` | `128` | Max cached per-API-key upstream HTTP clients (LRU). |
 
 ### Per-request API key via headers
 

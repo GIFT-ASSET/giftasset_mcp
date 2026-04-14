@@ -6,12 +6,27 @@ import os
 from collections import OrderedDict
 from typing import Optional, Literal, List
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from .client import GiftAssetClient
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("giftasset-mcp")
 
-mcp = FastMCP("giftasset-analyst")
+def _build_transport_security() -> Optional[TransportSecuritySettings]:
+    # MCP_DNS_REBINDING_PROTECTION=off disables the Host/Origin check entirely.
+    if os.getenv("MCP_DNS_REBINDING_PROTECTION", "on").lower() in ("off", "false", "0"):
+        return TransportSecuritySettings(enable_dns_rebinding_protection=False)
+    allowed_hosts = [h.strip() for h in os.getenv("MCP_ALLOWED_HOSTS", "").split(",") if h.strip()]
+    allowed_origins = [o.strip() for o in os.getenv("MCP_ALLOWED_ORIGINS", "").split(",") if o.strip()]
+    if not allowed_hosts and not allowed_origins:
+        return None
+    return TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=allowed_hosts or ["*"],
+        allowed_origins=allowed_origins or ["*"],
+    )
+
+mcp = FastMCP("giftasset-analyst", transport_security=_build_transport_security())
 
 _CLIENT_CACHE_MAX = int(os.getenv("MCP_CLIENT_CACHE_MAX", "128"))
 _clients: "OrderedDict[str, GiftAssetClient]" = OrderedDict()
