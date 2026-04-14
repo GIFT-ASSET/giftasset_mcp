@@ -8,11 +8,11 @@ logger = logging.getLogger(__name__)
 BASE_URL = os.environ.get("GIFTASSET_API_URL", "https://api.giftasset.dev/")
 
 class GiftAssetClient:
-    def __init__(self):
+    def __init__(self, api_key: Optional[str] = None):
         # We need an API key for the new Swagger spec endpoints. Get it via @giftassetmcp_bot
-        self.api_key = os.environ.get("GIFTASSET_API_KEY", "")
+        self.api_key = api_key if api_key is not None else os.environ.get("GIFTASSET_API_KEY", "")
         if not self.api_key:
-            logger.warning("GIFTASSET_API_KEY environment variable is not set. API calls might fail with 403 Forbidden. Get your key from @giftassetmcp_bot")
+            logger.warning("No API key provided (env GIFTASSET_API_KEY or request header). API calls might fail with 403 Forbidden. Get your key from @giftassetmcp_bot")
             
         headers = {
             "x-api-token": self.api_key,
@@ -21,6 +21,9 @@ class GiftAssetClient:
             "Accept-Encoding": "gzip, deflate"
         }
         self.client = httpx.AsyncClient(base_url=BASE_URL, headers=headers, timeout=30.0)
+
+    async def aclose(self) -> None:
+        await self.client.aclose()
 
     async def _request(self, method: str, endpoint: str, params: Optional[Dict] = None, json_data: Optional[Dict] = None) -> Any:
         try:

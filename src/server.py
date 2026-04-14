@@ -2,17 +2,47 @@ import asyncio
 import httpx
 import json
 import logging
+import os
+from collections import OrderedDict
 from typing import Optional, Literal, List
 from mcp.server.fastmcp import FastMCP
 from .client import GiftAssetClient
 
-# Configure basic logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("giftasset-mcp")
 
-# Initialize FastMCP Server
 mcp = FastMCP("giftasset-analyst")
-tg_client = GiftAssetClient()
+
+_CLIENT_CACHE_MAX = int(os.getenv("MCP_CLIENT_CACHE_MAX", "128"))
+_clients: "OrderedDict[str, GiftAssetClient]" = OrderedDict()
+
+def _get_api_key() -> str:
+    # In HTTP/SSE transports, allow per-request API key via header.
+    try:
+        ctx = mcp.get_context()
+        req = ctx.request_context.request  # Starlette Request in HTTP/SSE
+        key = req.headers.get("x-api-key") or req.headers.get("x-api-token")
+        if key:
+            return key
+    except Exception:
+        pass
+    return os.environ.get("GIFTASSET_API_KEY", "")
+
+def tg_client() -> GiftAssetClient:
+    key = _get_api_key()
+    client = _clients.get(key)
+    if client is not None:
+        _clients.move_to_end(key)
+        return client
+    client = GiftAssetClient(api_key=key)
+    _clients[key] = client
+    while len(_clients) > _CLIENT_CACHE_MAX:
+        _, evicted = _clients.popitem(last=False)
+        try:
+            asyncio.get_running_loop().create_task(evicted.aclose())
+        except RuntimeError:
+            pass
+    return client
 
 
 @mcp.tool()
@@ -24,7 +54,7 @@ async def get_gift_info(slug: str) -> str:
         slug: Slug of the gift (e.g., 'plushpepe-1')
     """
     try:
-        data = await tg_client.get_gift_info(slug=slug)
+        data = await tg_client().get_gift_info(slug=slug)
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
@@ -53,7 +83,7 @@ async def get_market_actions(
         market: Optional market filter ('offchain', etc)
     """
     try:
-        data = await tg_client.get_market_actions(
+        data = await tg_client().get_market_actions(
             page=page, mode=mode, action_type=action_type,
             gift=gift, min_price=min_price, max_price=max_price, market=market
         )
@@ -93,7 +123,7 @@ async def get_gifts_aggregator(
         receiver: Receiver telegram_id
     """
     try:
-        data = await tg_client.get_gifts_aggregator(
+        data = await tg_client().get_gifts_aggregator(
             page=page, name=name, model=model, symbol=symbol, backdrop=backdrop,
             number=number, from_price=from_price, to_price=to_price,
             markets=markets, blockchain_view=blockchain_view, receiver=receiver
@@ -118,7 +148,7 @@ async def get_unique_last_sales(
         model_name: Optional model name filter
     """
     try:
-        data = await tg_client.get_unique_last_sales(
+        data = await tg_client().get_unique_last_sales(
             collection_name=collection_name, limit=limit, model_name=model_name
         )
         return json.dumps({"status": "success", "data": data}, indent=2)
@@ -132,7 +162,7 @@ async def get_all_collections_last_sale() -> str:
     Get last sale on providers for all collections.
     """
     try:
-        data = await tg_client.get_all_collections_last_sale()
+        data = await tg_client().get_all_collections_last_sale()
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
@@ -144,7 +174,7 @@ async def get_gifts_update_stat() -> str:
     Get statistics on gift improvements/upgrades per day.
     """
     try:
-        data = await tg_client.get_gifts_update_stat()
+        data = await tg_client().get_gifts_update_stat()
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
@@ -177,7 +207,7 @@ async def get_gifts_price_list(
         premarket: If True, filter to include only premarket collections (default: False)
     """
     try:
-        data = await tg_client.get_gifts_price_list(models=models, premarket=premarket)
+        data = await tg_client().get_gifts_price_list(models=models, premarket=premarket)
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
@@ -194,7 +224,7 @@ async def get_gifts_price_list_history(
         collection_name: Name of a specific collection to retrieve history for (e.g., 'Loot Bag'). Omit for all collections.
     """
     try:
-        data = await tg_client.get_gifts_price_list_history(collection_name=collection_name)
+        data = await tg_client().get_gifts_price_list_history(collection_name=collection_name)
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
@@ -209,7 +239,7 @@ async def get_gift_by_name(name: str) -> str:
         name: Exact name of the gift (e.g., 'EasterEgg-1')
     """
     try:
-        data = await tg_client.get_gift_by_name(name=name)
+        data = await tg_client().get_gift_by_name(name=name)
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
@@ -237,7 +267,7 @@ async def get_all_collections_by_user(
         offset: Pagination offset
     """
     try:
-        data = await tg_client.get_all_collections_by_user(
+        data = await tg_client().get_all_collections_by_user(
             username=username, telegram_id=telegram_id,
             include=include, exclude=exclude,
             limit=limit, offset=offset
@@ -274,7 +304,7 @@ async def get_user_profile_price(
     pages using offsets and sum the values manually.
     """
     try:
-        data = await tg_client.get_user_profile_price(
+        data = await tg_client().get_user_profile_price(
             username=username, telegram_id=telegram_id,
             limit=limit, offset=offset
         )
@@ -300,7 +330,7 @@ async def get_gift_by_user(
         offset: Pagination offset
     """
     try:
-        data = await tg_client.get_gift_by_user(
+        data = await tg_client().get_gift_by_user(
             username=username,
             limit=limit, offset=offset
         )
@@ -320,7 +350,7 @@ async def get_unique_gifts_price_list(
         collection_name: Name of the collection (e.g., 'Loot Bag')
     """
     try:
-        data = await tg_client.get_unique_gifts_price_list(collection_name=collection_name)
+        data = await tg_client().get_unique_gifts_price_list(collection_name=collection_name)
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
@@ -332,7 +362,7 @@ async def get_gifts_collections_emission() -> str:
     Get information about unique gifts issue inside collections.
     """
     try:
-        data = await tg_client.get_gifts_collections_emission()
+        data = await tg_client().get_gifts_collections_emission()
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
@@ -344,7 +374,7 @@ async def get_gifts_collections_marketcap() -> str:
     Get the market-cap of gifts.
     """
     try:
-        data = await tg_client.get_gifts_collections_marketcap()
+        data = await tg_client().get_gifts_collections_marketcap()
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
@@ -356,7 +386,7 @@ async def get_gifts_collections_health_index() -> str:
     Get collection health index (liquidity, mcap, whales).
     """
     try:
-        data = await tg_client.get_gifts_collections_health_index()
+        data = await tg_client().get_gifts_collections_health_index()
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
@@ -368,7 +398,7 @@ async def get_gifts_collections_greed_index() -> str:
     Get greed index (hidden, upgraded, owners).
     """
     try:
-        data = await tg_client.get_gifts_collections_greed_index()
+        data = await tg_client().get_gifts_collections_greed_index()
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
@@ -380,12 +410,20 @@ async def get_providers_volumes() -> str:
     Get providers' sales volumes.
     """
     try:
-        data = await tg_client.get_providers_volumes()
+        data = await tg_client().get_providers_volumes()
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)}, indent=2)
 
 
 if __name__ == "__main__":
-    # Run the server using stdio transport (default for MCP)
-    mcp.run(transport='stdio')
+    transport = os.getenv("MCP_TRANSPORT", "stdio").lower()
+    if transport not in ("stdio", "sse", "streamable-http"):
+        raise SystemExit(f"Invalid MCP_TRANSPORT={transport!r}. Use stdio | sse | streamable-http")
+    if transport == "stdio":
+        mcp.run(transport="stdio")
+    else:
+        mcp.settings.host = os.getenv("MCP_HOST", "0.0.0.0")
+        mcp.settings.port = int(os.getenv("MCP_PORT", "8000"))
+        logger.info(f"Starting MCP over {transport} on {mcp.settings.host}:{mcp.settings.port}")
+        mcp.run(transport=transport)

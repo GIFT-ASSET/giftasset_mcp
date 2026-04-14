@@ -121,6 +121,75 @@ pip install -r requirements.txt
 
 ---
 
+## 🌐 HTTP / SSE Transport (remote access)
+
+Besides the default `stdio` transport, the server can be run as a long-lived HTTP service so multiple clients can reach it remotely.
+
+### Environment variables
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `MCP_TRANSPORT` | `stdio` | Transport mode: `stdio`, `sse`, or `streamable-http`. |
+| `MCP_HOST` | `0.0.0.0` | Bind host for HTTP/SSE transports. |
+| `MCP_PORT` | `8000` | Bind port for HTTP/SSE transports. |
+| `GIFTASSET_API_URL` | `https://api.giftasset.dev/` | Upstream API base URL. |
+| `GIFTASSET_API_KEY` | *(empty)* | Fallback API key used when the request has no auth header. |
+
+### Per-request API key via headers
+
+When running over `sse` / `streamable-http`, each MCP client request can carry its own API key via HTTP header — no need to bake the key into the container:
+
+```
+X-API-Key: <your_key>
+```
+
+(`X-API-Token` is also accepted.) If the header is missing, the server falls back to the `GIFTASSET_API_KEY` env variable. Clients are cached per-key inside the server, so multiple users can share one container with their own keys.
+
+### Run with Docker Compose (HTTP)
+
+`.env` example:
+```
+MCP_TRANSPORT=streamable-http
+MCP_PORT=8000
+# Optional fallback key if clients don't send X-API-Key:
+GIFTASSET_API_KEY=
+```
+
+Start it:
+```bash
+# Local: binds host port 8000 (via docker-compose.override.yml)
+docker compose up -d --build
+
+# PaaS / behind a reverse proxy (Coolify, Dokploy, Traefik, etc.):
+# skip the override so only `expose` is used, and let the proxy route traffic.
+docker compose -f docker-compose.yml up -d --build
+```
+
+Endpoints:
+- `streamable-http` → `http://<host>:8000/mcp`
+- `sse` → `http://<host>:8000/sse`
+
+### Connect an MCP client over HTTP
+
+Example for Claude Desktop / any HTTP-capable MCP client:
+```json
+{
+  "mcpServers": {
+    "telegram-gifts": {
+      "transport": "streamable-http",
+      "url": "http://your-host:8000/mcp",
+      "headers": {
+        "X-API-Key": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+For clients that only speak `stdio`, bridge with [`mcp-proxy`](https://github.com/sparfenyuk/mcp-proxy) or `supergateway`.
+
+---
+
 ## 💻 Standalone Testing
 
 Want to test the server directly via standard I/O before hooking it up to an agent?

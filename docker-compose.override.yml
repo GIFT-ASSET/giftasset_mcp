@@ -1,0 +1,17 @@
+# Local development override: binds the container port to the host so you can
+# reach the server at http://localhost:${MCP_PORT:-8000}.
+#
+# Docker Compose loads this file automatically alongside docker-compose.yml
+# when you run `docker compose up` locally.
+#
+# On PaaS platforms that manage their own reverse proxy (Coolify, Dokploy,
+# Railway, Fly, Render, etc.), DO NOT use this file — deploy with only
+# docker-compose.yml so the platform's proxy routes to the exposed port.
+# You can disable it explicitly:
+#     docker compose -f docker-compose.yml up
+version: '3.8'
+
+services:
+  telegram-gifts-mcp:
+    ports:
+      - "${MCP_PORT:-8000}:8000"
