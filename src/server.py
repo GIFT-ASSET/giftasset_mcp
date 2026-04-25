@@ -1,18 +1,39 @@
-import asyncio
 import httpx
 import json
 import logging
-from typing import Optional, Literal, List
+from contextlib import asynccontextmanager
+from typing import AsyncIterator, Optional, Literal, List
 from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.exceptions import ToolError
 from .client import GiftAssetClient
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("giftasset-mcp")
 
-# Initialize FastMCP Server
-mcp = FastMCP("giftasset-analyst")
 tg_client = GiftAssetClient()
+_ton_client = httpx.AsyncClient(timeout=10.0)
+
+
+def _format_error(e: BaseException) -> str:
+    parts = [f"{type(e).__name__}: {e}"]
+    cause = e.__cause__ or e.__context__
+    while cause is not None and cause is not e:
+        parts.append(f"caused by {type(cause).__name__}: {cause}")
+        cause = cause.__cause__ or cause.__context__
+    return " | ".join(parts)
+
+
+@asynccontextmanager
+async def lifespan(server: FastMCP) -> AsyncIterator[dict]:
+    try:
+        yield {}
+    finally:
+        await tg_client.aclose()
+        await _ton_client.aclose()
+
+
+mcp = FastMCP("giftasset-analyst", lifespan=lifespan)
 
 
 @mcp.tool()
@@ -27,7 +48,7 @@ async def get_gift_info(slug: str) -> str:
         data = await tg_client.get_gift_info(slug=slug)
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 
 @mcp.tool()
@@ -59,7 +80,7 @@ async def get_market_actions(
         )
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 
 @mcp.tool()
@@ -100,7 +121,7 @@ async def get_gifts_aggregator(
         )
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 
 @mcp.tool()
@@ -123,7 +144,7 @@ async def get_unique_last_sales(
         )
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 
 @mcp.tool()
@@ -135,7 +156,7 @@ async def get_all_collections_last_sale() -> str:
         data = await tg_client.get_all_collections_last_sale()
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 
 @mcp.tool()
@@ -147,7 +168,7 @@ async def get_gifts_update_stat() -> str:
         data = await tg_client.get_gifts_update_stat()
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 @mcp.tool()
 async def get_ton_price() -> str:
@@ -155,14 +176,13 @@ async def get_ton_price() -> str:
     Get the current price of TON (The Open Network) in USD.
     """
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get("https://tonapi.io/v2/rates?tokens=ton&currencies=usd")
-            response.raise_for_status()
-            data = response.json()
-            ton_data = data.get("rates", {}).get("TON", {})
-            return json.dumps({"status": "success", "data": ton_data}, indent=2)
+        response = await _ton_client.get("https://tonapi.io/v2/rates?tokens=ton&currencies=usd")
+        response.raise_for_status()
+        data = response.json()
+        ton_data = data.get("rates", {}).get("TON", {})
+        return json.dumps({"status": "success", "data": ton_data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 @mcp.tool()
 async def get_gifts_price_list(
@@ -180,7 +200,7 @@ async def get_gifts_price_list(
         data = await tg_client.get_gifts_price_list(models=models, premarket=premarket)
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 
 @mcp.tool()
@@ -197,7 +217,7 @@ async def get_gifts_price_list_history(
         data = await tg_client.get_gifts_price_list_history(collection_name=collection_name)
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 
 @mcp.tool()
@@ -212,7 +232,7 @@ async def get_gift_by_name(name: str) -> str:
         data = await tg_client.get_gift_by_name(name=name)
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 
 @mcp.tool()
@@ -244,7 +264,7 @@ async def get_all_collections_by_user(
         )
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 
 @mcp.tool()
@@ -280,7 +300,7 @@ async def get_user_profile_price(
         )
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 
 @mcp.tool()
@@ -306,7 +326,7 @@ async def get_gift_by_user(
         )
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 
 @mcp.tool()
@@ -323,7 +343,7 @@ async def get_unique_gifts_price_list(
         data = await tg_client.get_unique_gifts_price_list(collection_name=collection_name)
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 
 @mcp.tool()
@@ -335,7 +355,7 @@ async def get_gifts_collections_emission() -> str:
         data = await tg_client.get_gifts_collections_emission()
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 
 @mcp.tool()
@@ -347,7 +367,7 @@ async def get_gifts_collections_marketcap() -> str:
         data = await tg_client.get_gifts_collections_marketcap()
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 
 @mcp.tool()
@@ -359,7 +379,7 @@ async def get_gifts_collections_health_index() -> str:
         data = await tg_client.get_gifts_collections_health_index()
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 
 @mcp.tool()
@@ -371,7 +391,7 @@ async def get_gifts_collections_greed_index() -> str:
         data = await tg_client.get_gifts_collections_greed_index()
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 
 @mcp.tool()
@@ -383,7 +403,7 @@ async def get_providers_volumes() -> str:
         data = await tg_client.get_providers_volumes()
         return json.dumps({"status": "success", "data": data}, indent=2)
     except Exception as e:
-        return json.dumps({"status": "error", "message": str(e)}, indent=2)
+        raise ToolError(_format_error(e)) from e
 
 
 if __name__ == "__main__":
