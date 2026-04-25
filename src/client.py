@@ -22,6 +22,9 @@ class GiftAssetClient:
         }
         self.client = httpx.AsyncClient(base_url=BASE_URL, headers=headers, timeout=30.0)
 
+    async def aclose(self) -> None:
+        await self.client.aclose()
+
     async def _request(self, method: str, endpoint: str, params: Optional[Dict] = None, json_data: Optional[Dict] = None) -> Any:
         try:
             response = await self.client.request(method, endpoint, params=params, json=json_data)
